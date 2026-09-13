@@ -108,7 +108,7 @@ class GeminiProvider(BaseLLMProvider):
 
             client = genai.Client(api_key=self.api_key)
             
-            # Chuẩn hóa function declarations cho Gemini SDK
+            # Chuẩn hóa function declarations cho Gemini SDK.
             function_declarations = []
             for tool in tools_schema:
                 # Bỏ qua các tool schema chưa được định nghĩa hoàn chỉnh

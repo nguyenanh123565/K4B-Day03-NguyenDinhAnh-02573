@@ -1,6 +1,6 @@
 """
 🛠️ TOOL DEFINITIONS & EXECUTION BACKEND
-Mã nguồn chứa danh sách Tool Schemas (JSON Schema) và Execution Layer phục vụ cho MCP Server.
+Mã nguồn chứa danh sách Tool Schemas (JSON Schema) vàa Execution Layer phục vụ cho MCP Server.
 """
 
 import json

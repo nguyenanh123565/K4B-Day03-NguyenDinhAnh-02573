@@ -1,6 +1,6 @@
 """
 🔌 MODEL CONTEXT PROTOCOL (MCP) SERVER MODULE
-Mô phỏng kiến trúc MCP Server (Client-Server Architecture) cung cấp công cụ chuẩn hóa.
+Mô phỏng kiến trúc MCP Server (Client-Server Architecture) cung cấp công cụ cchuẩn hóa.
 """
 
 import json
