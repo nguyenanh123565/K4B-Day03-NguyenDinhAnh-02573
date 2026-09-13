@@ -1,29 +1,163 @@
 [
   {
     "step": 1,
-    "query": "Chào bạn, bạn có thể giới thiệu quy chế học vụ cơ bản của Đại học VinUni không?",
+    "query": "Bạn có thể hướng dẫn tôi cách quản lý chi tiêu cá nhân không?",
     "action_type": "FINAL_ANSWER",
-    "thought": "Câu hỏi chung về quy chế học vụ, trả lời trực tiếp không cần gọi Tool.",
-    "output": "[Mock Agent Response]: Xin chào! Quy chế học vụ VinUni yêu cầu sinh viên tích lũy tối thiểu 120 tín chỉ và duy trì GPA trên 2.0 để tốt nghiệp.",
-    "latency_ms": 2845.93
+    "thought": "Câu hỏi chưa cần gọi tool chi tiêu.",
+    "output": "Bạn có thể yêu cầu tôi ghi nhận khoản chi, tổng hợp chi tiêu hoặc kiểm tra ngân sách.",
+    "latency_ms": 1139.89
   },
   {
     "step": 1,
-    "query": "Hãy tra cứu thông tin học vụ của sinh viên SV2026001.",
+    "query": "Hãy tổng hợp toàn bộ chi tiêu trong tháng 2026-09.",
     "action_type": "TOOL_EXECUTION",
-    "tool_name": "academic_query",
+    "tool_name": "summarize_expenses",
     "arguments": {
-      "student_id": "SV2026001"
+      "month": "2026-09"
     },
-    "observation": {},
-    "latency_ms": 799.12
+    "observation": {
+      "status": "SUCCESS",
+      "month": "2026-09",
+      "category": "Tất cả",
+      "total": 125000,
+      "count": 2,
+      "expenses": [
+        {
+          "id": 1,
+          "amount": 85000,
+          "category": "Ăn uống",
+          "description": "Cơm trưa",
+          "date": "2026-09-10"
+        },
+        {
+          "id": 2,
+          "amount": 40000,
+          "category": "Di chuyển",
+          "description": "Xe bus",
+          "date": "2026-09-11"
+        }
+      ]
+    },
+    "latency_ms": 433.35
   },
   {
     "step": 2,
-    "query": "Hãy tra cứu thông tin học vụ của sinh viên SV2026001.",
+    "query": "Hãy tổng hợp toàn bộ chi tiêu trong tháng 2026-09.",
     "action_type": "FINAL_ANSWER",
     "thought": "Tổng hợp kết quả từ MCP Server thành công.",
-    "output": "Chưa thể trả lời chi tiết do chưa nhận được dữ liệu từ MCP Server (hãy hoàn thành TODO 2.1).",
+    "output": "Đã hoàn tất: {\"status\": \"SUCCESS\", \"month\": \"2026-09\", \"category\": \"Tất cả\", \"total\": 125000, \"count\": 2, \"expenses\": [{\"id\": 1, \"amount\": 85000, \"category\": \"Ăn uống\", \"description\": \"Cơm trưa\", \"date\": \"2026-09-10\"}, {\"id\": 2, \"amount\": 40000, \"category\": \"Di chuyển\", \"description\": \"Xe bus\", \"date\": \"2026-09-11\"}]}",
+    "latency_ms": 10.0
+  },
+  {
+    "step": 1,
+    "query": "Hãy ghi nhận khoản chi 120000 VND cho bữa tối thuộc danh mục Ăn uống vào ngày 2026-09-13.",
+    "action_type": "TOOL_EXECUTION",
+    "tool_name": "record_expense",
+    "arguments": {
+      "amount": 120000,
+      "category": "Ăn uống",
+      "description": "Bữa tối",
+      "date": "2026-09-13"
+    },
+    "observation": {
+      "status": "SUCCESS",
+      "event": "EXPENSE_RECORDED",
+      "data": {
+        "id": 3,
+        "date": "2026-09-13",
+        "type": "expense",
+        "amount": 120000,
+        "category": "Ăn uống",
+        "note": "Bữa tối"
+      },
+      "message": "Đã ghi nhận khoản chi 120,000 VND cho danh mục Ăn uống."
+    },
+    "latency_ms": 507.35
+  },
+  {
+    "step": 2,
+    "query": "Hãy ghi nhận khoản chi 120000 VND cho bữa tối thuộc danh mục Ăn uống vào ngày 2026-09-13.",
+    "action_type": "FINAL_ANSWER",
+    "thought": "Tổng hợp kết quả từ MCP Server thành công.",
+    "output": "Đã ghi nhận khoản chi 120,000 VND cho danh mục Ăn uống.",
+    "latency_ms": 10.0
+  },
+  {
+    "step": 1,
+    "query": "Hãy ghi nhận khoản chi 120000 VND cho bữa tối ngày 2026-09-13, sau đó kiểm tra khoản chi Ăn uống trong tháng 2026-09 so với ngân sách 3000000 VND.",
+    "action_type": "TOOL_EXECUTION",
+    "tool_name": "record_expense",
+    "arguments": {
+      "amount": 120000,
+      "category": "Ăn uống",
+      "description": "Bữa tối",
+      "date": "2026-09-13"
+    },
+    "observation": {
+      "status": "SUCCESS",
+      "event": "EXPENSE_RECORDED",
+      "data": {
+        "id": 4,
+        "date": "2026-09-13",
+        "type": "expense",
+        "amount": 120000,
+        "category": "Ăn uống",
+        "note": "Bữa tối"
+      },
+      "message": "Đã ghi nhận khoản chi 120,000 VND cho danh mục Ăn uống."
+    },
+    "latency_ms": 802.07
+  },
+  {
+    "step": 2,
+    "query": "Hãy ghi nhận khoản chi 120000 VND cho bữa tối ngày 2026-09-13, sau đó kiểm tra khoản chi Ăn uống trong tháng 2026-09 so với ngân sách 3000000 VND.",
+    "action_type": "TOOL_EXECUTION",
+    "tool_name": "budget_check",
+    "arguments": {
+      "category": "Ăn uống",
+      "monthly_limit": 3000000,
+      "month": "2026-09"
+    },
+    "observation": {
+      "status": "SUCCESS",
+      "month": "2026-09",
+      "category": "Ăn uống",
+      "spent": 325000,
+      "monthly_limit": 3000000.0,
+      "remaining": 2675000.0,
+      "over_budget": false
+    },
+    "latency_ms": 423.06
+  },
+  {
+    "step": 3,
+    "query": "Hãy ghi nhận khoản chi 120000 VND cho bữa tối ngày 2026-09-13, sau đó kiểm tra khoản chi Ăn uống trong tháng 2026-09 so với ngân sách 3000000 VND.",
+    "action_type": "FINAL_ANSWER",
+    "thought": "Tổng hợp kết quả từ MCP Server thành công.",
+    "output": "Đã hoàn tất: {\"status\": \"SUCCESS\", \"month\": \"2026-09\", \"category\": \"Ăn uống\", \"spent\": 325000, \"monthly_limit\": 3000000.0, \"remaining\": 2675000.0, \"over_budget\": false}",
+    "latency_ms": 10.0
+  },
+  {
+    "step": 1,
+    "query": "Hãy kiểm tra tổng chi tiêu danh mục Du lịch trong tháng 2026-09.",
+    "action_type": "TOOL_EXECUTION",
+    "tool_name": "summarize_expenses",
+    "arguments": {
+      "month": "2026-09",
+      "category": "Du lịch"
+    },
+    "observation": {
+      "status": "NOT_FOUND",
+      "message": "Chưa có giao dịch nào trong tháng 2026-09 cho danh mục 'Du lịch'."
+    },
+    "latency_ms": 1279.42
+  },
+  {
+    "step": 2,
+    "query": "Hãy kiểm tra tổng chi tiêu danh mục Du lịch trong tháng 2026-09.",
+    "action_type": "FINAL_ANSWER",
+    "thought": "Tổng hợp kết quả từ MCP Server thành công.",
+    "output": "Chưa có giao dịch nào trong tháng 2026-09 cho danh mục 'Du lịch'.",
     "latency_ms": 10.0
   }
 ]

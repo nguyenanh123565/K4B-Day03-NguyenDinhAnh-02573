@@ -4,48 +4,63 @@ Mã nguồn chứa danh sách Tool Schemas (JSON Schema) và Execution Layer ph�
 """
 
 import json
+import os
+from datetime import datetime
 from typing import Dict, Any
+from dotenv import load_dotenv
+from openpyxl import Workbook, load_workbook
+
+load_dotenv()
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+WORKBOOK_PATH = os.path.join(BASE_DIR, os.getenv("EXPENSE_WORKBOOK", "data/expense_tracker.xlsx"))
+TRANSACTION_HEADERS = [
+    "id", "date", "type", "amount", "category", "subcategory", "note",
+    "payment_method", "account", "tags", "is_recurring", "created_at"
+]
 
 # ==============================================================================
 # 1. KHAI BÁO TOOL SCHEMAS CHUẨN NATIVE JSON SCHEMA (TASK 1.2)
 # ==============================================================================
 
 TOOLS_SCHEMA = [
-    # Tool 1: Đã được định nghĩa mẫu sẵn cho Học viên tham khảo
     {
-        "name": "academic_query",
-        "description": "Tra cứu hồ sơ và thông tin học vụ của sinh viên VinUni bằng mã sinh viên.",
+        "name": "record_expense",
+        "description": "Ghi nhận một khoản chi tiêu cá nhân vào sổ chi tiêu.",
         "parameters": {
             "type": "object",
             "properties": {
-                "student_id": {
-                    "type": "string",
-                    "description": "Mã sinh viên cần tra cứu (ví dụ: 'SV2026001')"
-                }
+                "amount": {"type": "number", "description": "Số tiền đã chi bằng VND."},
+                "category": {"type": "string", "description": "Danh mục chi tiêu, ví dụ Ăn uống hoặc Di chuyển."},
+                "description": {"type": "string", "description": "Mô tả ngắn khoản chi."},
+                "date": {"type": "string", "description": "Ngày chi theo định dạng YYYY-MM-DD."}
             },
-            "required": ["student_id"]
+            "required": ["amount", "category", "description", "date"]
         }
     },
-    
-    # --------------------------------------------------------------------------
-    # TODO 1.2: HỌC VIÊN HOÀN THIỆN TOOL SCHEMA CHO 'schedule_appointment'
-    # 🎯 YÊU CẦU THIẾT KẾ SCHEMA (JSON SCHEMA STANDARD):
-    # 1. Tool dùng để đặt lịch hẹn tư vấn học vụ với Cố vấn học tập VinUni.
-    # 2. Thiết kế các tham số (properties) để LLM trích xuất:
-    #    - student_id (string): Mã sinh viên cần đặt lịch (ví dụ: 'SV2026001')
-    #    - datetime_str (string): Thời gian hẹn (ví dụ: '14:00 15/09/2026')
-    #    - advisor_name (string): Tên cố vấn học tập
-    # 3. Khai báo danh sách các trường bắt buộc (required).
-    # --------------------------------------------------------------------------
     {
-        "name": "schedule_appointment",
-        "description": "Đặt lịch hẹn tư vấn học vụ với Cố vấn học tập VinUni.",
+        "name": "summarize_expenses",
+        "description": "Tổng hợp các khoản chi theo tháng hoặc danh mục.",
         "parameters": {
             "type": "object",
             "properties": {
-                # TODO 1.2: Khai báo các thuộc tính tham số cho Tool tại đây...
+                "month": {"type": "string", "description": "Tháng cần tổng hợp theo định dạng YYYY-MM."},
+                "category": {"type": "string", "description": "Danh mục cần lọc; bỏ trống để xem tất cả."}
             },
-            "required": [] # TODO 1.2: Khai báo danh sách các trường bắt buộc tại đây...
+            "required": ["month"]
+        }
+    },
+    {
+        "name": "budget_check",
+        "description": "Kiểm tra số tiền đã chi so với ngân sách tháng của một danh mục.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "category": {"type": "string", "description": "Danh mục cần kiểm tra."},
+                "monthly_limit": {"type": "number", "description": "Ngân sách tối đa trong tháng bằng VND."},
+                "month": {"type": "string", "description": "Tháng cần kiểm tra theo định dạng YYYY-MM."}
+            },
+            "required": ["category", "monthly_limit", "month"]
         }
     }
 ]
@@ -54,58 +69,89 @@ TOOLS_SCHEMA = [
 # 2. MÔ PHỎNG DỮ LIỆU & HÀM THỰC THI TOOL (EXECUTION LAYER)
 # ==============================================================================
 
-MOCK_DATABASE = {
-    "SV2026001": {
-        "full_name": "Nguyễn Văn An",
-        "class": "AI-K4",
-        "gpa": 3.85,
-        "email": "an.nv@vinuni.edu.vn",
-        "status": "Đang học",
-        "advisor": "PGS.TS Nguyễn Văn A"
-    },
-    "SV2026002": {
-        "full_name": "Trần Thị Bình",
-        "class": "AI-K4",
-        "gpa": 3.60,
-        "email": "binh.tt@vinuni.edu.vn",
-        "status": "Đang học",
-        "advisor": "TS. Lê Thị B"
-    }
-}
+def _ensure_workbook() -> None:
+    """Create the documented workbook structure when no workbook exists."""
+    if os.path.exists(WORKBOOK_PATH):
+        return
+    os.makedirs(os.path.dirname(WORKBOOK_PATH), exist_ok=True)
+    workbook = Workbook()
+    transactions = workbook.active
+    transactions.title = "Transactions"
+    transactions.append(TRANSACTION_HEADERS)
+    transactions.append([1, "2026-09-10", "expense", 85000, "Ăn uống", "", "Cơm trưa", "Tiền mặt", "", "", False, datetime.now().isoformat(timespec="seconds")])
+    transactions.append([2, "2026-09-11", "expense", 40000, "Di chuyển", "", "Xe bus", "Tiền mặt", "", "", False, datetime.now().isoformat(timespec="seconds")])
+    categories = workbook.create_sheet("Categories")
+    categories.append(["category_name", "type", "parent_category", "icon_color"])
+    budget = workbook.create_sheet("Budget")
+    budget.append(["category", "period", "limit_amount", "start_date", "note"])
+    budget.append(["Ăn uống", "monthly", 3000000, "2026-09-01", "Ngân sách mẫu"])
+    workbook.create_sheet("Accounts").append(["account_name", "account_type", "initial_balance", "currency"])
+    workbook.create_sheet("Report").append(["period", "category", "total_amount", "percent_of_total", "budget_status", "generated_at"])
+    workbook.save(WORKBOOK_PATH)
 
 
-def execute_academic_query(student_id: str) -> str:
-    """Thực thi tra cứu học vụ theo mã sinh viên"""
-    student = MOCK_DATABASE.get(student_id.strip().upper())
-    if student:
-        return json.dumps({
-            "status": "SUCCESS",
-            "student_id": student_id,
-            "data": student
-        }, ensure_ascii=False)
-    else:
-        return json.dumps({
-            "status": "NOT_FOUND",
-            "message": f"Không tìm thấy dữ liệu sinh viên có mã '{student_id}'"
-        }, ensure_ascii=False)
+def _read_transactions() -> list:
+    _ensure_workbook()
+    workbook = load_workbook(WORKBOOK_PATH, data_only=True)
+    sheet = workbook["Transactions"]
+    headers = [cell.value for cell in sheet[1]]
+    return [dict(zip(headers, row)) for row in sheet.iter_rows(min_row=2, values_only=True) if any(row)]
 
 
-def execute_schedule_appointment(student_id: str, datetime_str: str, advisor_name: str = "PGS.TS Nguyễn Văn A") -> str:
-    """Thực thi đặt lịch hẹn tư vấn học vụ"""
-    return json.dumps({
-        "status": "SUCCESS",
-        "booking_id": f"BK-{student_id}-99",
-        "student_id": student_id,
-        "datetime": datetime_str,
-        "advisor": advisor_name,
-        "message": f"Đặt lịch thành công cho sinh viên {student_id} với {advisor_name} vào lúc {datetime_str}."
-    }, ensure_ascii=False)
+def execute_record_expense(amount: float, category: str, description: str, date: str) -> str:
+    """Ghi nhận khoản chi sau khi kiểm tra dữ liệu đầu vào."""
+    if amount <= 0:
+        return json.dumps({"status": "VALIDATION_ERROR", "message": "Số tiền phải lớn hơn 0."}, ensure_ascii=False)
+    datetime.strptime(date, "%Y-%m-%d")
+    _ensure_workbook()
+    workbook = load_workbook(WORKBOOK_PATH)
+    sheet = workbook["Transactions"]
+    next_id = max((row[0].value or 0 for row in sheet.iter_rows(min_row=2, max_col=1)), default=0) + 1
+    expense = {"id": next_id, "date": date, "type": "expense", "amount": amount,
+               "category": category.strip(), "note": description.strip()}
+    sheet.append([next_id, date, "expense", amount, category.strip(), "", description.strip(), "", "", "", False,
+                  datetime.now().isoformat(timespec="seconds")])
+    workbook.save(WORKBOOK_PATH)
+    return json.dumps({"status": "SUCCESS", "event": "EXPENSE_RECORDED", "data": expense,
+                       "message": f"Đã ghi nhận khoản chi {amount:,.0f} VND cho danh mục {category}."}, ensure_ascii=False)
+
+
+def execute_summarize_expenses(month: str, category: str = "") -> str:
+    """Tổng hợp khoản chi theo tháng và tùy chọn danh mục."""
+    expenses = [e for e in _read_transactions() if str(e.get("date", "")).startswith(month)
+                and e.get("type") == "expense"
+                and (not category or str(e.get("category", "")).lower() == category.strip().lower())]
+    expenses = [{"id": e.get("id"), "amount": e.get("amount"), "category": e.get("category"),
+                 "description": e.get("note", ""), "date": str(e.get("date", ""))} for e in expenses]
+    if not expenses:
+        return json.dumps({"status": "NOT_FOUND", "message": f"Chưa có giao dịch nào trong tháng {month} cho danh mục '{category}'."}, ensure_ascii=False)
+    total = sum(e["amount"] for e in expenses)
+    return json.dumps({"status": "SUCCESS", "month": month, "category": category or "Tất cả",
+                       "total": total, "count": len(expenses), "expenses": expenses}, ensure_ascii=False)
+
+
+def execute_check_budget(category: str, monthly_limit: float, month: str) -> str:
+    """So sánh tổng chi của danh mục với ngân sách tháng."""
+    _ensure_workbook()
+    workbook = load_workbook(WORKBOOK_PATH, data_only=True)
+    budget_sheet = workbook["Budget"]
+    for row in budget_sheet.iter_rows(min_row=2, values_only=True):
+        if row[0] == category and row[1] == "monthly" and row[2] is not None:
+            monthly_limit = float(row[2])
+            break
+    summary = json.loads(execute_summarize_expenses(month, category))
+    spent = summary.get("total", 0)
+    return json.dumps({"status": "SUCCESS", "month": month, "category": category,
+                       "spent": spent, "monthly_limit": monthly_limit,
+                       "remaining": monthly_limit - spent,
+                       "over_budget": spent > monthly_limit}, ensure_ascii=False)
 
 
 # Router gọi tool thực tế
 TOOL_ROUTER = {
-    "academic_query": execute_academic_query,
-    "schedule_appointment": execute_schedule_appointment
+    "record_expense": execute_record_expense,
+    "summarize_expenses": execute_summarize_expenses,
+    "budget_check": execute_check_budget
 }
 
 def dispatch_tool_call(tool_name: str, arguments: Dict[str, Any]) -> str:

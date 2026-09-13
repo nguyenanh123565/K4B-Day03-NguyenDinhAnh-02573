@@ -36,28 +36,47 @@ class MockOfflineProvider(BaseLLMProvider):
 
     def generate_with_tools(self, prompt: str, tools_schema: List[Dict[str, Any]], system_prompt: str = "") -> Dict[str, Any]:
         prompt_lower = prompt.lower()
-        
-        # Mô phỏng nhận diện intent gọi Tool
-        if "sv2026001" in prompt_lower and "đặt lịch" in prompt_lower:
+        if "không tồn tại" in prompt_lower or "chưa có giao dịch" in prompt_lower or "du lịch" in prompt_lower:
             return {
                 "type": "tool_call",
-                "tool_name": "schedule_appointment",
-                "arguments": {"student_id": "SV2026001", "datetime_str": "14:00 15/09/2026", "advisor_name": "PGS.TS Nguyễn Văn A"},
-                "thought": "Người dùng yêu cầu đặt lịch hẹn tư vấn cho sinh viên SV2026001. Tôi sẽ gọi tool schedule_appointment."
+                "tool_name": "summarize_expenses",
+                "arguments": {"month": "2026-09", "category": "Du lịch"},
+                "thought": "Tôi sẽ kiểm tra dữ liệu danh mục được yêu cầu và báo rõ nếu chưa có giao dịch."
             }
-        elif "sv2026001" in prompt_lower or "tra cứu" in prompt_lower:
+        if "đã ghi nhận khoản chi" in prompt_lower and "ngân sách" in prompt_lower:
+            return {
+                "type": "tool_call", "tool_name": "budget_check",
+                "arguments": {"category": "Ăn uống", "monthly_limit": 3000000, "month": "2026-09"},
+                "thought": "Đã ghi nhận khoản chi; tôi chuyển sang kiểm tra ngân sách theo bước tiếp theo."
+            }
+        if "tổng hợp" in prompt_lower or "tổng chi" in prompt_lower:
+            return {
+                "type": "tool_call", "tool_name": "summarize_expenses",
+                "arguments": {"month": "2026-09"},
+                "thought": "Người dùng muốn xem tổng chi tiêu tháng, tôi sẽ gọi summarize_expenses."
+            }
+        if "sau đó" in prompt_lower and ("ngân sách" in prompt_lower or "budget" in prompt_lower):
             return {
                 "type": "tool_call",
-                "tool_name": "academic_query",
-                "arguments": {"student_id": "SV2026001"},
-                "thought": "Người dùng muốn tra cứu thông tin học vụ của sinh viên SV2026001. Tôi sẽ gọi tool academic_query."
+                "tool_name": "record_expense",
+                "arguments": {"amount": 120000, "category": "Ăn uống", "description": "Bữa tối", "date": "2026-09-13"},
+                "thought": "Tôi ghi nhận khoản chi trước, sau đó sẽ kiểm tra ngân sách theo yêu cầu đa bước."
             }
-        else:
+        if "ghi nhận" in prompt_lower or "thêm khoản" in prompt_lower:
             return {
-                "type": "text",
-                "content": f"[Mock Agent Response]: Xin chào! Quy chế học vụ VinUni yêu cầu sinh viên tích lũy tối thiểu 120 tín chỉ và duy trì GPA trên 2.0 để tốt nghiệp.",
-                "thought": "Câu hỏi chung về quy chế học vụ, trả lời trực tiếp không cần gọi Tool."
+                "type": "tool_call",
+                "tool_name": "record_expense",
+                "arguments": {"amount": 120000, "category": "Ăn uống", "description": "Bữa tối", "date": "2026-09-13"},
+                "thought": "Người dùng muốn ghi nhận một khoản chi, tôi sẽ gọi record_expense."
             }
+        if "ngân sách" in prompt_lower or "budget" in prompt_lower:
+            return {
+                "type": "tool_call", "tool_name": "budget_check",
+                "arguments": {"category": "Ăn uống", "monthly_limit": 3000000, "month": "2026-09"},
+                "thought": "Tôi sẽ kiểm tra tổng chi ăn uống so với ngân sách tháng."
+            }
+        return {"type": "text", "content": "Bạn có thể yêu cầu tôi ghi nhận khoản chi, tổng hợp chi tiêu hoặc kiểm tra ngân sách.",
+            "thought": "Câu hỏi chưa cần gọi tool chi tiêu."}
 
 
 class GeminiProvider(BaseLLMProvider):

@@ -17,21 +17,21 @@
     "id": "TC03",
     "type": "expense_recording",
     "question": "Hãy ghi nhận khoản chi 120000 VND cho bữa tối thuộc danh mục Ăn uống vào ngày 2026-09-13.",
-    "expected_behavior": "Agent tự động gọi Tool 'record_expense' với dữ liệu khoản chi.",
+    "expected_behavior": "Agent tự động phát sinh Tool Call 'record_expense' với amount=120000, category='Ăn uống', description='Bữa tối' và date='2026-09-13'.",
     "complexity": "Medium"
   },
   {
     "id": "TC04",
     "type": "multi_step_reasoning",
     "question": "Hãy ghi nhận khoản chi 120000 VND cho bữa tối ngày 2026-09-13, sau đó kiểm tra khoản chi Ăn uống trong tháng 2026-09 so với ngân sách 3000000 VND.",
-    "expected_behavior": "Agent gọi record_expense rồi budget_check theo chuỗi ReAct.",
+    "expected_behavior": "Agent thực hiện ReAct đa bước: gọi 'record_expense' trước, nhận Observation thành công, sau đó gọi 'budget_check' với category='Ăn uống', monthly_limit=3000000 và month='2026-09'.",
     "complexity": "High"
   },
   {
     "id": "TC05",
     "type": "edge_case_handling",
     "question": "Hãy kiểm tra tổng chi tiêu danh mục Du lịch trong tháng 2026-09.",
-    "expected_behavior": "Agent nhận NOT_FOUND từ summarize_expenses và không bịa số liệu.",
+    "expected_behavior": "Agent gọi 'summarize_expenses' với month='2026-09' và category='Du lịch', nhận trạng thái NOT_FOUND rồi thông báo chưa có giao dịch; không bịa số liệu.",
     "complexity": "Medium"
   }
 ]
